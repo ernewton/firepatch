@@ -1,18 +1,14 @@
 
-; Performs blinear interpolation to fix bad pixels from a given mask.
+; Performs bilinear interpolation to fix bad pixels from a given mask.
 ; If no mask is provided, a default archived mask is used, and
-; the masked pixels are returned in the mask keyword
+; the mask is returned in the mask keyword
 
-function fire_badpixfix, rawimg, msk=msk
+function fire_badpixfix, rawimg, msk=mask
+; renamed msk -> mask because original program in error
 
-  if (not keyword_set(MSK) or n_elements(msk) LT 2) then begin
+  if (not keyword_set(mask) or n_elements(mask) LT 2) then begin
      mask = transpose(reverse(xmrdfits(strtrim(getenv("FIRE_DIR"),2)+"/Calib/fire_badpix.fits.gz")))
-     msk=mask ; For return value to set invvar accordingly
-     print, "WARNING: new mas!" 
   endif
-
-  yimg = (intarr(2048)+1) # indgen(2048)
-  ximg = indgen(2048) # (intarr(2048)+1) 
   
   badpix = where(mask EQ 0, nmsk)
   gdpix = where(mask EQ 1, ngd)
@@ -20,24 +16,35 @@ function fire_badpixfix, rawimg, msk=msk
 
   if (nmsk GT 0) then begin
 
-     if (0) then begin ; SLOW METHOD
-        for imsk=0, nmsk-1 do begin
-           cleaned[ximg[badpix], yimg[badpix]] = $
-              (cleaned[ximg[badpix]-1,yimg[badpix]]+ $
-               cleaned[ximg[badpix]+1,yimg[badpix]]+ $
-               cleaned[ximg[badpix],yimg[badpix]+1]+ $
-               cleaned[ximg[badpix],yimg[badpix]-1]) / 4.0
-        endfor
-     endif else begin
-
+     if (0) then begin ; original method, fails for plus-shaped bad pixels
         interp_img  = (shift(cleaned,  1,  0) + $
                       shift(cleaned, -1,  0) + $
                       shift(cleaned,  0, -1) + $
                       shift(cleaned,  0,  1)) / 4.0
+     endif else begin
 
-        cleaned[badpix] = interp_img[badpix]
+         ; use nan-resistant means to interpolate and iterate
+         ; in order to avoid issues with consecutive bad pixels
+         
+         ; temp will contain the iteratively improved cleaned image
+         temp = rawimg
+         temp[WHERE(mask EQ 0)] = 0./0.
+         bp = WHERE(finite(temp) EQ 0, count)
+         
+         while count GT 0 do begin
+            arr    = [[[shift(temp,  1,  0)]], $
+                      [[shift(temp, -1,  0)]], $
+                      [[shift(temp,  0, -1)]], $
+                      [[shift(temp,  0,  1)]]]
+            ; fix points that still need to be fixed
+            bp = WHERE(finite(temp) EQ 0, count)
+            interp_img = mean(arr, dimension=3, /nan)
+            if count GT 0 then temp[bp] = interp_img[bp]
+         endwhile
      
      endelse
+     
+     cleaned[badpix] = interp_img[badpix]
 
   endif
 

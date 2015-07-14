@@ -53,7 +53,7 @@ function fire_badpixfix, rawimg, msk=mask
 end
 
 
-
+; new bad pixel mask from a dark frame
 function badpixnew
 
   dark = xmrdfits(strtrim(getenv("FIRE_DIR"),2)+"/Calib/fowler16dark.fits")
@@ -66,4 +66,24 @@ function badpixnew
  
   return, mask
   
+end
+
+; extra few bad pixels from a blank frame 
+function badpixnewmore
+
+  x=mrdfits(strtrim(getenv("FIRE_DIR"),2)+"/Calib/blank1.fits")
+  xmasked = fire_badpixfix(transpose(reverse(x)))
+  xsmoothed = xmasked-gauss_smooth(xmasked, 4)
+
+  y=mrdfits(strtrim(getenv("FIRE_DIR"),2)+"/Calib/blank2.fits")
+  ymasked = fire_badpixfix(transpose(reverse(y)))
+  ysmoothed = ymasked-gauss_smooth(ymasked, 4)
+
+  mask = xmrdfits(strtrim(getenv("FIRE_DIR"),2)+"/Calib/fire_badpix_new.fits.gz")
+
+  more = WHERE(xsmoothed LT -80 AND ysmoothed LT -80)
+  mask[more] = 0.
+
+  mwrfits, mask, strtrim(getenv("FIRE_DIR"),2)+"/Calib/fire_badpix_new2.fits.gz", /create
+
 end

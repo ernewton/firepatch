@@ -4,12 +4,14 @@ This is a patch for the firehose pipeline to improve the treatment of bad pixels
 
 This patch includes a new bad pixel mask created from a Fowler-16 dark image using a 5-sigma clip, and an updated version of fire_badpixfix.pro. You should be able to replace the default files with these versions.
 
-There are several other changes that I made that you may wish to incorporate as well, which are detailed below. Implementing them will require the small changes to the IDL scripts that I describe below. They may not be necessary for you, as my objects are particularly bright.
+There are several other changes that I made that you may wish to incorporate as well, which are detailed below. Implementing them will require the small changes to the IDL scripts that I describe below. They may not be necessary for you, as my objects are particularly bright. 
+
+If you choose to implement any of these changes, you might consider inspecting at the final images to see if they look as you expect.
 
 
 ### More on bad pixels
 
-Extract/fire_echextobj.pro performs some extra pixel masking. At line 514, the pipeline masks out pixels where the flux is less than -200. 
+The routine Extract/fire_echextobj.pro performs some extra pixel masking. At line 514, the pipeline masks out pixels where the flux is less than -200. 
 ```
 thismask = (ordermask EQ (31-qq)) AND waveimg GT 0.0 AND sciimg GT -200.
 ```
@@ -25,6 +27,9 @@ cleaned_skyimage = fire_badpixfix(skyimage, msk=ernmask)
 sciimg = cleaned_sciimg
 skyimage = cleaned_skyimage
 ```
+
+The routine fire_proc may do additional masking; it is built in to the divideflat routine that is called at line 107. Pixels with values less than minval are set to 0; minval is set at line 58. The default is 0.5, which resulted in at least one zero-d out pixel in my data. Looking at the distribution of flatfield values for my flats, 0.3 made sense as a lower limit.
+
 
 ### Masking the object for sky subtraction
 

@@ -8,6 +8,7 @@ There are several other changes that I made that you may wish to incorporate as 
 
 If you choose to implement any of these changes, you might consider inspecting at the final images to see if they look as you expect.
 
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.20541.svg)](http://dx.doi.org/10.5281/zenodo.20541)
 
 ### Caveats
 

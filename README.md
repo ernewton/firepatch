@@ -41,14 +41,15 @@ The routine fire_proc may do additional masking; it is built in to the dividefla
 
 ### Masking the object for sky subtraction
 
-The object is masked by the xidl routine long_objfind (xidl/Spec/Longslit/pro) which masks out a portion of the spectrum surrounding the object. It only masks out a box the size of the FWHM, and I found that there was a lot of object light left over in my sky image, primarily resulting in a deformation of the continuum (it was not too significant for me). This can be adjusted by inflating the size of the mask at lines 609-610, e.g. for a 5-sigma clip:
+The object is masked by the xidl routine long_objfind (xidl/Spec/Longslit/pro) which masks out a portion of the spectrum surrounding the object. It only masks out a box the size of the FWHM, and I found that there was sometimes a lot of object light left over in my sky image, primarily resulting in a (minor) deformation of the continuum. This can be adjusted by inflating the size of the mask at lines 609-610, e.g. for a 2-sigma clip:
 ```
-inflate = 5.D*2.3
+inflate = 2.D*2.3
 left_ind  = objstruct.xpos - $
      replicate(median_fwhm*inflate, nobj) ## replicate(1.0D, ny)/2.0D
 right_ind = objstruct.xpos + $
      replicate(median_fwhm*inflate, nobj) ## replicate(1.0D, ny)/2.0D
 ```
+It is important to verify that enough sky on either side of the masked object is left. Without enough sky, accurate interpolation of the sky image across the mask is not guaranteed. You can inspect the sky-subtracted images to verify that there are not substantial residuals at the locations of prominant emission lines (especially in the reddest order).
 
 ### Cross correlation in the Spextool telluric correction
 
